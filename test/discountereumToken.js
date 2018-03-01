@@ -1,4 +1,4 @@
-var DiscountereumToken = artifacts.require("./DiscountereumToken.sol");
+const DiscountereumToken = artifacts.require("./DiscountereumToken.sol");
 
 contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
@@ -9,7 +9,7 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
   let token;
 
   beforeEach(async function () {
-    token = await DiscountereumToken.deployed();
+    token = await DiscountereumToken.new();
   });
 
   describe('onlyOwner', function () {
@@ -22,8 +22,6 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
       await token.pause();
       try { await token.unpause({from: anotherAccount}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
-
-      await token.unpause();    // return default state
     });
 
     it("addToWhitelistAccount", async () => {
@@ -135,8 +133,6 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
       assert.equal(newSenderBalance.valueOf(), senderBalance.valueOf()/1 - amount);
       assert.equal(newRecipientBalance.valueOf(), recipientBalance.valueOf()/1 + amount);
-
-      await token.transfer(owner, amount, { from: recipient });       // return default state
     });
 
     it('when pause and sender is not whitelist', async function () {
@@ -147,9 +143,6 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
       try { await token.transfer(recipient, amount, { from: anotherAccount }); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
-
-      await token.unpause();                                         // return default state
-      await token.transfer(owner, amount, { from: anotherAccount }); // return default state
     });
 
     it('when pause and sender is whitelist', async function () {
@@ -166,11 +159,6 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
         assert.equal(senderBalance.valueOf(), 0);
         assert.equal(recipientBalance.valueOf(), amount);
-
-        await token.unpause();                                             // return default state
-        await token.removeFromWhitelistAccount(anotherAccount);            // return default state
-        await token.transfer(anotherAccount, amount, { from: recipient }); // return default state
-        await token.transfer(owner, amount, { from: anotherAccount });     // return default state
     });
   });
 
