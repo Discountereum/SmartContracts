@@ -1,5 +1,8 @@
-// import latestTime from 'zeppelin-solidity/helpers/latestTime';
-var latestTime = require("../node_modules/zeppelin-solidity/test/helpers/latestTime.js");
+import ether from '../node_modules/zeppelin-solidity/test/helpers//ether';
+import { advanceBlock } from '../node_modules/zeppelin-solidity/test/helpers//advanceToBlock';
+import { increaseTimeTo, duration } from '../node_modules/zeppelin-solidity/test/helpers//increaseTime';
+import latestTime from '../node_modules/zeppelin-solidity/test/helpers/latestTime';
+import EVMRevert from '../node_modules/zeppelin-solidity/test/helpers/EVMRevert';
 
 var DiscountereumToken = artifacts.require("./DiscountereumToken.sol");
 var DiscountereumCrowdsale = artifacts.require("./DiscountereumCrowdsale.sol");
@@ -10,20 +13,42 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
 
   let token;
   let crowdsale;
+  let openingTime;
+  let closingTime;
+  let afterClosingTime;
   const decimals      = 18;
   const cap           = 800000000 * Math.pow(10,decimals);
   const initialSupply = cap * 0.05;
-  const openingTime = 1592611200; // 20.06.2020 (http://www.onlineconversion.com/unix_time.htm)
-  const closingTime = 1624147200; // 20.06.2021
 
   beforeEach(async function () {
+    openingTime = latestTime() + duration.weeks(1);
+    closingTime = openingTime + duration.weeks(1);
+
     token = await DiscountereumToken.new();
     crowdsale = await DiscountereumCrowdsale.new(wallet, token.address, openingTime, closingTime);
     await token.setSaleAgent(crowdsale.address);
   });
 
+  describe('check reject before and end time', function () {
+    it('before', async function () {
+      let err = '';
+      try { await crowdsale.send(2, {from: owner}); } catch (error) { err = error; }
+      assert.ok(err instanceof Error);
+    });
+
+    it('before', async function () {
+      await increaseTimeTo(closingTime + duration.seconds(1));
+      let err = '';
+      try { await crowdsale.send(2, {from: owner}); } catch (error) { err = error; }
+      assert.ok(err instanceof Error);
+    });
+  });
+
+
+
   describe('check saleAgent', function () {
     it("saleAgent is crowdsale address", async () => {
+      await increaseTimeTo(openingTime);
       const saleAgent = await token.saleAgent.call();
       assert.equal(saleAgent, crowdsale.address);
     });
@@ -33,6 +58,7 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     let ether = 2.5;
 
     it('send', async function () {
+      await increaseTimeTo(openingTime);
       const value = ether * Math.pow(10,18);
       const rate = await crowdsale.rate.call();
       let preBalanceOwner = await token.balanceOf.call(owner);
@@ -44,6 +70,7 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     });
 
     it('buyTokens', async function () {
+      await increaseTimeTo(openingTime);
       const value = ether * Math.pow(10,18);
       const rate = await crowdsale.rate.call();
       let preBalanceInvestor = await token.balanceOf.call(investor);
@@ -55,6 +82,7 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     });
 
     it('totalSupply', async function () {
+      await increaseTimeTo(openingTime);
       const value = ether * Math.pow(10,18);
       const rate = await crowdsale.rate.call();
 
@@ -65,6 +93,7 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     });
 
     it('wallet ether', async function () {
+      await increaseTimeTo(openingTime);
       const value = ether * Math.pow(10,18);
       const rate = await crowdsale.rate.call();
       const preBalanceWei = web3.eth.getBalance(wallet);
@@ -75,9 +104,9 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     });
 
     it('without saleAgent', async function () {
+      await increaseTimeTo(openingTime);
       await token.setSaleAgent(0x0);
       let err = '';
-      await token.pause();
       try { await crowdsale.send(2, {from: owner}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
