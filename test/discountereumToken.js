@@ -14,23 +14,45 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
   describe('onlyOwner', function () {
     it("pause", async () => {
+      let err = '';
       try { await token.pause({from: anotherAccount}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
 
     it("unpause", async () => {
+      let err = '';
       await token.pause();
       try { await token.unpause({from: anotherAccount}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
 
     it("addToWhitelistAccount", async () => {
+      let err = '';
       try { await token.addToWhitelistAccount(anotherAccount, {from: anotherAccount}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
 
     it("removeFromWhitelistAccount", async () => {
+      let err = '';
       try { await token.removeFromWhitelistAccount(anotherAccount, {from: anotherAccount}); } catch (error) { err = error; }
+      assert.ok(err instanceof Error);
+    });
+
+    it("mint", async () => {
+      let err = '';
+      try { await token.mint(anotherAccount, 100, {from: anotherAccount}); } catch (error) { err = error; }
+      assert.ok(err instanceof Error);
+    });
+
+    it("finishMinting", async () => {
+      let err = '';
+      try { await token.finishMinting({from: anotherAccount}); } catch (error) { err = error; }
+      assert.ok(err instanceof Error);
+    });
+
+    it("setSaleAgent", async () => {
+      let err = '';
+      try { await token.setSaleAgent(anotherAccount, {from: anotherAccount}); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
   });
@@ -117,6 +139,7 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
   describe('check transfer', function () {
     it('when the sender does not have enough balance', async function () {
+      let err = '';
       try { await token.transfer(recipient, 100, { from: anotherAccount }); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
@@ -141,6 +164,7 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
       await token.transfer(anotherAccount, amount);
       await token.pause();
 
+      let err = '';
       try { await token.transfer(recipient, amount, { from: anotherAccount }); } catch (error) { err = error; }
       assert.ok(err instanceof Error);
     });
@@ -159,6 +183,38 @@ contract('DiscountereumToken', async ([owner, recipient, anotherAccount]) => {
 
         assert.equal(senderBalance.valueOf(), 0);
         assert.equal(recipientBalance.valueOf(), amount);
+    });
+  });
+
+  describe('check mint', function () {
+    it('mint owner', async function () {
+      await token.mint(anotherAccount, 150);
+
+      const balance = await token.balanceOf.call(anotherAccount);
+      assert.equal(balance.valueOf(), 150);
+    });
+
+    it('mint saleAgent', async function () {
+      await token.setSaleAgent(anotherAccount);
+      await token.mint(anotherAccount, 150, {from: anotherAccount});
+
+      const balance = await token.balanceOf.call(anotherAccount);
+      assert.equal(balance.valueOf(), 150);
+    });
+
+    it('finishMinting owner', async function () {
+      await token.finishMinting();
+
+        const mintingFinished = await token.mintingFinished.call();
+        assert.equal(mintingFinished, true);
+    });
+
+    it('finishMinting saleAgent', async function () {
+      await token.setSaleAgent(anotherAccount);
+      await token.finishMinting({from: anotherAccount});
+
+        const mintingFinished = await token.mintingFinished.call();
+        assert.equal(mintingFinished, true);
     });
   });
 
