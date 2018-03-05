@@ -17,8 +17,10 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
   let closingTime;
   let afterClosingTime;
   const decimals      = 18;
-  const cap           = 800000000 * Math.pow(10,decimals);
-  const initialSupply = cap * 0.05;
+  const capToken      = 800000000 * Math.pow(10,decimals);
+  const initialSupply = capToken * 0.05;
+  const rate = 10000;
+  const cap = 38000 * Math.pow(10,decimals);
 
   beforeEach(async function () {
     openingTime = latestTime() + duration.weeks(1);
@@ -27,6 +29,20 @@ contract('DiscountereumCrowdsale', async function ([owner, investor, wallet, pur
     token = await DiscountereumToken.new();
     crowdsale = await DiscountereumCrowdsale.new(wallet, token.address, openingTime, closingTime);
     await token.setSaleAgent(crowdsale.address);
+  });
+
+  describe('check cap', function () {
+    it("cap is 38000 ether", async () => {
+       let _cap = await crowdsale.cap.call();
+       assert.equal(_cap.valueOf(), cap);
+    });
+  });
+
+  describe('check rate', function () {
+    it("cap is 10000 DSCT for 1 wei", async () => {
+       let _rate = await crowdsale.rate.call();
+       assert.equal(_rate.valueOf(), rate);
+    });
   });
 
   describe('check reject before and end time', function () {
