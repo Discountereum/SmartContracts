@@ -7,8 +7,6 @@ import './DiscountereumToken.sol';
 
 contract DiscountereumCrowdsale is CappedCrowdsale, MintedCrowdsale {
   DiscountereumToken public token;
-  address public oldOwnerToken;
-
   uint256 public constant _rate = 10000; // 1 ETH = 10 000 DSCT
   uint256 public constant _cap = 380000000 * 10000 * 1 ether; // 380 000 000 DSCT
 
@@ -17,14 +15,6 @@ contract DiscountereumCrowdsale is CappedCrowdsale, MintedCrowdsale {
     CappedCrowdsale(_cap)
   {
     token = _token;
-    oldOwnerToken = _token.owner();
   }
 
-  function claimOwnership() public {
-    token.claimOwnership();
-  }
-
-  function transferOwnership() public {
-    token.transferOwnership(oldOwnerToken);
-  }
 }
